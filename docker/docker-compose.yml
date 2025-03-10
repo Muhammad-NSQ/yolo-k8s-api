@@ -1,1 +1,32 @@
-# Local development setup
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/app.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - API_DEBUG=true
+      - LOG_LEVEL=INFO
+      - MODEL_USE_TRITON=false
+      - MODEL_DEVICE=cpu
+      - MODEL_NAME=yolov8n.pt
+      - PYTHONPATH=/app
+    volumes:
+      - ../app:/app
+      - model-data:/root/.cache/torch
+      - upload-data:/tmp/uploads
+    working_dir: /app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  model-data:
+  upload-data:

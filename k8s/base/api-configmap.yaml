@@ -1,1 +1,11 @@
-# ConfigMap for settings
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yolo-api-config
+data:
+  API_DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  MODEL_DEVICE: "cpu"
+  MODEL_NAME: "yolov8n.pt"
+  MODEL_CONFIDENCE_THRESHOLD: "0.25"
+  MODEL_USE_TRITON: "false"
