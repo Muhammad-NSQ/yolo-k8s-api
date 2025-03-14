@@ -48,3 +48,7 @@ kubeconfig
 /data
 /uploads
 /models
+**/*.onnx
+**/*.pt
+**/models/
+**/exported_models/
