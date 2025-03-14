@@ -1,1 +1,39 @@
-# Local development setup
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/app.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - API_DEBUG=true
+      - LOG_LEVEL=INFO
+      - MODEL_DEVICE=cuda:0  # Use GPU
+      - MODEL_NAME=yolov8n.pt
+      - MODEL_USE_TENSORRT=true  # Enable optimization (for ONNX)
+      - MODEL_TENSORRT_FP16=true  # Use FP16 precision
+      - MODEL_TENSORRT_CACHE_DIR=/tmp/tensorrt
+      - PYTHONPATH=/app
+      - LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/wsl/lib:/usr/lib/x86_64-linux-gnu:/opt/conda/lib/python3.11/site-packages/tensorrt_libs
+    volumes:
+      - ../app:/app
+      - model-data:/root/.cache/torch
+      - upload-data:/tmp/uploads
+      - tensorrt-data:/tmp/tensorrt  # For optimized models
+      - /usr/lib/wsl:/usr/lib/wsl  # For WSL
+    working_dir: /app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  model-data:
+  upload-data:
+  tensorrt-data:  # Add this volume for optimized models

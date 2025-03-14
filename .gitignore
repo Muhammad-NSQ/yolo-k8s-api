@@ -39,7 +39,7 @@ ENV/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
+.log
 # Kubernetes
 kubeconfig
 *.kubeconfig
@@ -48,3 +48,7 @@ kubeconfig
 /data
 /uploads
 /models
+**/*.onnx
+**/*.pt
+**/models/
+**/exported_models/
