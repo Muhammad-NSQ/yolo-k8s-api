@@ -8,7 +8,4 @@ opencv-python-headless==4.7.0.72
 numpy==1.24.3
 Pillow==9.5.0
 prometheus-client==0.17.0
-ultralytics==8.0.145  # Using a specific version that works
-tritonclient[grpc]==2.31.0
-torch==2.0.1
-inference
+ultralytics==8.0.145

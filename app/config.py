@@ -5,13 +5,18 @@ import os
 
 class ModelSettings(BaseSettings):
     """Settings for YOLO model configuration"""
-    MODEL_NAME: str = "yolov8n.pt"  # Default to YOLOv8 nano
+    MODEL_NAME: str = "yolov8l.pt"  # Default to YOLOv8 nano
     CONFIDENCE_THRESHOLD: float = 0.25
     IOU_THRESHOLD: float = 0.45
     USE_TRITON: bool = False  # Default to direct inference
     TRITON_URL: str = "triton:8001"  # Default gRPC endpoint
-    DEVICE: str = "cpu"  # Use 'cuda:0' for GPU
+    DEVICE: str = "cuda:0"  # Use 'cuda:0' for GPU
     MAX_DETECTIONS: int = 100
+    
+    # TensorRT settings
+    USE_TENSORRT: bool = False  # Enable TensorRT acceleration
+    TENSORRT_FP16: bool = True  # Use FP16 precision (faster, slightly less accurate)
+    TENSORRT_CACHE_DIR: str = "/tmp/tensorrt"  # Directory to store TensorRT engine files
 
     class Config:
         env_prefix = "MODEL_"
@@ -65,3 +70,7 @@ settings = get_settings()
 
 # Ensure upload directory exists
 os.makedirs(settings.API.UPLOAD_DIR, exist_ok=True)
+
+# Ensure TensorRT cache directory exists if TensorRT is enabled
+if settings.MODEL.USE_TENSORRT:
+    os.makedirs(settings.MODEL.TENSORRT_CACHE_DIR, exist_ok=True)

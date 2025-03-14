@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from schemas import HealthResponse
 from config import settings
 from models import get_model
+import torch
 
 # Create router
 router = APIRouter(tags=["Health"])
