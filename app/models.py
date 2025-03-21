@@ -14,7 +14,7 @@ from schemas import DetectionResult
 logger = logging.getLogger(__name__)
 
 class YOLOModel:
-    """YOLO model wrapper for object detection with ONNX optimization"""
+    """YOLO model wrapper for object detection with TensorRT optimization"""
     
     def __init__(self):
         """Initialize the YOLO model"""
@@ -43,7 +43,7 @@ class YOLOModel:
         self.load_model()
     
     def load_model(self):
-        """Load the YOLO model with ONNX optimization if available"""
+        """Load the YOLO model with TensorRT optimization if available"""
         try:
             logger.info(f"Loading YOLO model: {self.model_name}")
             start_time = time.time()
@@ -51,27 +51,27 @@ class YOLOModel:
             # Set environment variable to bypass the security check
             os.environ["ULTRALYTICS_SKIP_TORCH_WEIGHTS_WARNING"] = "1"
             
-            # Check for pre-exported ONNX model if optimization is enabled
+            # Check for pre-exported TensorRT engine if optimization is enabled
             if self.use_optimization and self.device.startswith('cuda'):
-                logger.info("TensorRT optimization enabled, checking for ONNX model")
+                logger.info("TensorRT optimization enabled, checking for TensorRT engine")
                 
                 # Determine path to optimized model
                 model_basename = Path(self.model_name).stem
-                onnx_path = Path(self.optimize_dir) / f"{model_basename}_fp{'16' if self.use_fp16 else '32'}.onnx"
+                engine_path = Path(self.optimize_dir) / f"{model_basename}.engine"
                 
-                if onnx_path.exists():
-                    logger.info(f"Loading optimized ONNX model: {onnx_path}")
+                if engine_path.exists():
+                    logger.info(f"Loading TensorRT engine: {engine_path}")
                     try:
-                        # For ONNX models with TensorRT, specify the device during loading
-                        self.model = YOLO(str(onnx_path))
-                        logger.info("ONNX model loaded successfully with TensorRT optimization")
+                        # Load TensorRT engine directly
+                        self.model = YOLO(str(engine_path))
+                        logger.info("TensorRT engine loaded successfully")
                     except Exception as e:
-                        logger.error(f"Failed to load ONNX model: {str(e)}")
+                        logger.error(f"Failed to load TensorRT engine: {str(e)}")
                         logger.warning("Falling back to standard PyTorch model")
                         self.model = YOLO(self.model_name)
                         self.model.to(self.device)
                 else:
-                    logger.info(f"Optimized ONNX model not found at {onnx_path}")
+                    logger.info(f"TensorRT engine not found at {engine_path}")
                     logger.info("Loading standard PyTorch model")
                     self.model = YOLO(self.model_name)
                     self.model.to(self.device)
@@ -122,10 +122,9 @@ class YOLOModel:
         try:
             # Run inference
             with torch.no_grad():
-                # Check if model is ONNX
+                # Check if model is TensorRT engine
                 model_path = getattr(self.model, "ckpt_path", "")
-                is_onnx = str(model_path).endswith(".onnx")
-                is_fp16 = self.use_fp16 and is_onnx
+                is_tensorrt = str(model_path).endswith(".engine")
                 
                 # Prediction args
                 pred_args = {
@@ -135,13 +134,9 @@ class YOLOModel:
                     'verbose': False
                 }
                 
-                # For ONNX models, specify device and data type for TensorRT
-                if is_onnx:
+                # For TensorRT engines, specify device
+                if is_tensorrt:
                     pred_args['device'] = self.device
-                    
-                    # Explicitly handle FP16 for ONNX with TensorRT
-                    if is_fp16:
-                        pred_args['half'] = True
                 
                 # Run prediction
                 results = self.model.predict(image, **pred_args)
@@ -230,9 +225,12 @@ class YOLOModel:
         if self.model is not None:
             info["task"] = getattr(self.model, "task", "unknown")
             
-            # Check if model is ONNX
+            # Check if model is TensorRT
             model_path = getattr(self.model, "ckpt_path", "")
-            info["model_format"] = "ONNX" if str(model_path).endswith(".onnx") else "PyTorch"
+            if str(model_path).endswith(".engine"):
+                info["model_format"] = "TensorRT"
+            else:
+                info["model_format"] = "PyTorch"
             
             # Add class names if available
             if hasattr(self.model, "names"):

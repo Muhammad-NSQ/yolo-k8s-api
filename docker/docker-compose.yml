@@ -16,13 +16,11 @@ services:
       - MODEL_TENSORRT_FP16=true  # Use FP16 precision
       - MODEL_TENSORRT_CACHE_DIR=/tmp/tensorrt
       - PYTHONPATH=/app
-      - LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/lib/wsl/lib:/usr/lib/x86_64-linux-gnu:/opt/conda/lib/python3.11/site-packages/tensorrt_libs
     volumes:
       - ../app:/app
       - model-data:/root/.cache/torch
       - upload-data:/tmp/uploads
       - tensorrt-data:/tmp/tensorrt  # For optimized models
-      - /usr/lib/wsl:/usr/lib/wsl  # For WSL
     working_dir: /app
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     deploy:
