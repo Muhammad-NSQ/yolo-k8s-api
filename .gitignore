@@ -54,4 +54,4 @@ kubeconfig
 /uploads
 /model_repository/
 /app/results/
-/k8s/**/exported_models/
+/k8s/
