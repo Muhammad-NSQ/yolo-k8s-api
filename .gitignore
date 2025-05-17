@@ -21,6 +21,10 @@ var/
 *.egg
 *.pt
 *.onnx
+*.toml
+*.plan
+*.engine
+*.pbtxt
 # Virtual Environment
 venv/
 ENV/
@@ -48,6 +52,6 @@ kubeconfig
 # Local data
 /data
 /uploads
-/models
+/model-repository
 **/models/
 **/exported_models/
