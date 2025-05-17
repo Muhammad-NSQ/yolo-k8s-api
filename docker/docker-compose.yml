@@ -8,21 +8,22 @@ services:
       dockerfile: docker/converter.Dockerfile
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
-      # Default conversion parameters
-      - MODEL=${MODEL:-yolov9l.pt}
-      - MODEL_NAME=${MODEL_NAME:-yolov9}
+      # Default conversion parameters - override with environment variables
+      - MODEL=${MODEL:-yolov8l.pt}
+      - MODEL_NAME=${MODEL_NAME:-yolov8trt_fp16}
       - MIN_SHAPE=${MIN_SHAPE:-1x3x640x640}
       - OPT_SHAPE=${OPT_SHAPE:-4x3x640x640}
       - MAX_SHAPE=${MAX_SHAPE:-8x3x640x640}
       - DEVICE=${DEVICE:-0}
+      - FORCE_REBUILD=${FORCE_REBUILD:-false}
     volumes:
       - ../model_repository:/model_repository
       - ../scripts:/app/scripts
     command: [
       "python", 
       "convert_model.py",
-      "--model", "${MODEL:-yolov10l.pt}",
-      "--model-name", "${MODEL_NAME:-yolov10}",
+      "--model", "${MODEL:-yolov8l.pt}",
+      "--model-name", "${MODEL_NAME:-yolov8trt_fp16}",
       "--min-shape", "${MIN_SHAPE:-1x3x640x640}",
       "--opt-shape", "${OPT_SHAPE:-4x3x640x640}",
       "--max-shape", "${MAX_SHAPE:-8x3x640x640}",
@@ -45,9 +46,9 @@ services:
     volumes:
       - ../model_repository:/model_repository
     command: ["tritonserver", "--model-repository=/model_repository"]
-    # depends_on:
-    #   model-converter:
-    #     condition: service_completed_successfully
+    depends_on:
+      model-converter:
+        condition: service_completed_successfully
     deploy:
       resources:
         reservations:
@@ -67,11 +68,11 @@ services:
       - API_DEBUG=true
       - LOG_LEVEL=INFO
       - MODEL_DEVICE=cuda:0
-      - MODEL_NAME=${MODEL_NAME:-yolov8trt2_fp16}
+      - MODEL_NAME=${MODEL_NAME:-yolov8trt_fp16}
       - MODEL_USE_TENSORRT=true
       - MODEL_USE_TRITON=true
       - MODEL_TRITON_URL=triton:8001
-      - MODEL_TRITON_MODEL_NAME=${MODEL_NAME:-yolov9}
+      - MODEL_TRITON_MODEL_NAME=${MODEL_NAME:-yolov8trt_fp16}
       - PYTHONPATH=/app
     volumes:
       - ../app:/app
@@ -80,8 +81,8 @@ services:
       - ../model_repository:/model_repository
     working_dir: /app
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
-    # depends_on:
-    #   - triton
+    depends_on:
+      - triton
     deploy:
       resources:
         reservations:

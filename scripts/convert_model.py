@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """
 Improved YOLO model conversion script with auto-detection of model properties.
@@ -386,6 +385,24 @@ def setup_model_directory(args, engine_path, onnx_path):
 def main():
     """Main conversion pipeline."""
     args = parse_args()
+    
+    # Check if model already exists
+    model_dir = Path(args.model_repository) / args.model_name
+    model_path = model_dir / "1" / "model.plan"
+    config_path = model_dir / "config.pbtxt"
+    
+    if model_path.exists() and config_path.exists():
+        print(f"Model {args.model_name} already exists at {model_dir}")
+        print(f"Engine file: {model_path} (size: {model_path.stat().st_size} bytes)")
+        print(f"Config file: {config_path}")
+        
+        # Check if force rebuild flag is set
+        if os.environ.get("FORCE_REBUILD", "").lower() in ["true", "1", "yes"]:
+            print("FORCE_REBUILD is set. Rebuilding the model...")
+        else:
+            print("Model already exists. Skipping conversion.")
+            print("To rebuild the model, set FORCE_REBUILD=true")
+            return
     
     # Create working directory
     work_dir = Path(args.work_dir)
