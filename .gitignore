@@ -52,6 +52,6 @@ kubeconfig
 # Local data
 /data
 /uploads
-/model-repository
-**/models/
-**/exported_models/
+/model_repository/
+/app/results/
+/k8s/**/exported_models/

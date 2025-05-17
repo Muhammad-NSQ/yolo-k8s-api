@@ -1,6 +1,62 @@
 version: '3.8'
 
 services:
+  # Model converter service - runs once to prepare the model
+  model-converter:
+    build:
+      context: ..
+      dockerfile: docker/converter.Dockerfile
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      # Default conversion parameters
+      - MODEL=${MODEL:-yolov9l.pt}
+      - MODEL_NAME=${MODEL_NAME:-yolov9}
+      - MIN_SHAPE=${MIN_SHAPE:-1x3x640x640}
+      - OPT_SHAPE=${OPT_SHAPE:-4x3x640x640}
+      - MAX_SHAPE=${MAX_SHAPE:-8x3x640x640}
+      - DEVICE=${DEVICE:-0}
+    volumes:
+      - ../model_repository:/model_repository
+      - ../scripts:/app/scripts
+    command: [
+      "python", 
+      "convert_model.py",
+      "--model", "${MODEL:-yolov10l.pt}",
+      "--model-name", "${MODEL_NAME:-yolov10}",
+      "--min-shape", "${MIN_SHAPE:-1x3x640x640}",
+      "--opt-shape", "${OPT_SHAPE:-4x3x640x640}",
+      "--max-shape", "${MAX_SHAPE:-8x3x640x640}",
+      "--device", "${DEVICE:-0}",
+      "--model-repository", "/model_repository"
+    ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+  triton:
+    image: nvcr.io/nvidia/tritonserver:23.02-py3
+    ports:
+      - "8001:8001"
+      - "8002:8002"
+      - "8003:8003"
+    volumes:
+      - ../model_repository:/model_repository
+    command: ["tritonserver", "--model-repository=/model_repository"]
+    # depends_on:
+    #   model-converter:
+    #     condition: service_completed_successfully
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
   api:
     build:
       context: ..
@@ -10,19 +66,22 @@ services:
     environment:
       - API_DEBUG=true
       - LOG_LEVEL=INFO
-      - MODEL_DEVICE=cuda:0  # Use GPU
-      - MODEL_NAME=yolov8n.pt
-      - MODEL_USE_TENSORRT=true  # Enable optimization (for ONNX)
-      - MODEL_TENSORRT_FP16=true  # Use FP16 precision
-      - MODEL_TENSORRT_CACHE_DIR=/tmp/tensorrt
+      - MODEL_DEVICE=cuda:0
+      - MODEL_NAME=${MODEL_NAME:-yolov8trt2_fp16}
+      - MODEL_USE_TENSORRT=true
+      - MODEL_USE_TRITON=true
+      - MODEL_TRITON_URL=triton:8001
+      - MODEL_TRITON_MODEL_NAME=${MODEL_NAME:-yolov9}
       - PYTHONPATH=/app
     volumes:
       - ../app:/app
       - model-data:/root/.cache/torch
       - upload-data:/tmp/uploads
-      - tensorrt-data:/tmp/tensorrt  # For optimized models
+      - ../model_repository:/model_repository
     working_dir: /app
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    # depends_on:
+    #   - triton
     deploy:
       resources:
         reservations:
@@ -34,4 +93,4 @@ services:
 volumes:
   model-data:
   upload-data:
-  tensorrt-data:  # Add this volume for optimized models
+  tensorrt-data:

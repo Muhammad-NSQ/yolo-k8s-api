@@ -46,3 +46,21 @@ class TrafficAnalysisResponse(BaseModel):
     total_vehicles: int
     pedestrians: int
     traffic_signals: int
+    
+class VideoInfo(BaseModel):
+    fps: float
+    frame_count: int
+    width: int
+    height: int
+    duration: float
+    file_size: int
+
+
+class VideoInferenceResponse(BaseModel):
+    video_info: VideoInfo
+    processing_time: float
+    total_frames_processed: int
+    total_detections: int
+    model_name: str
+    frames_with_detections: int
+    result_video: Optional[str] = None

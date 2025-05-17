@@ -1,4 +1,5 @@
-FROM ultralytics/ultralytics:latest
+FROM ultralytics/ultralytics:8.3.91
+
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
