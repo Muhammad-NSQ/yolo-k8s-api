@@ -13,8 +13,8 @@ A high-performance object detection API built with FastAPI, YOLO, TensorRT, and 
 - **RESTful API** with FastAPI
 - **Multi-format support** for images and videos
 - **Specialized endpoints** for traffic analysis
-- **Prometheus metrics** for monitoring
-- **Flexible deployment** with Docker and Kubernetes
+- **Prometheus metrics** for monitoring (Has not been implemented yet)
+- **Flexible deployment** with Docker and Kubernetes (Kubernetes has not been implemented yet)
 
 ## 🛠️ Architecture
 
