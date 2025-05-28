@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triton-server
+  namespace: inference
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: triton-server
+  template:
+    metadata:
+      labels:
+        app: triton-server
+    spec:
+      containers:
+      - name: triton-server
+        image: nvcr.io/nvidia/tritonserver:23.02-py3
+        args: ["tritonserver", "--model-repository=/models"]
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        ports:
+        - containerPort: 8000
+        - containerPort: 8001
+        - containerPort: 8002
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "3Gi"
+            # nvidia.com/gpu: 1
+          limits:
+            cpu: "4"
+            memory: "5Gi"
+            # nvidia.com/gpu: 1
+        volumeMounts:
+        - name: model-repo
+          mountPath: /models
+        securityContext:
+          privileged: true
+      volumes:
+      - name: model-repo
+        persistentVolumeClaim:
+          claimName: model-repository-pvc

@@ -1,0 +1,20 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yolo-api-ingress
+  namespace: inference
+  annotations:
+    # These annotations are for NGINX ingress controller
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"  # Allow uploads up to 100MB
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: yolo-api-service
+            port:
+              number: 8000

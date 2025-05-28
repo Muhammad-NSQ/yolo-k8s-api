@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo-api
+  namespace: inference
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: yolo-api
+  template:
+    metadata:
+      labels:
+        app: yolo-api
+    spec:
+      containers:
+      - name: yolo-api
+        image: muhammadnsq/k8s-train:yolo-api
+        ports:
+        - containerPort: 8000
+        env:
+        - name: TRITON_URL
+          value: "triton-service.inference.svc.cluster.local:8001"
+        - name: MODEL_DEVICE
+          value: "cuda:0"
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        envFrom:
+        - configMapRef:
+            name: api-config
+        - configMapRef:
+            name: model-config
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "3"
+            memory: "2Gi"
+        volumeMounts:
+        - name: upload-data
+          mountPath: /app/results
+        securityContext:
+          privileged: true
+      volumes:
+      - name: upload-data
+        persistentVolumeClaim:
+          claimName: upload-data-pvc

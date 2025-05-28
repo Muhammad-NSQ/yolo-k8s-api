@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: model-converter
+  namespace: inference
+spec:
+  template:
+    spec:
+      containers:
+      - name: converter
+        image: muhammadnsq/k8s-train:model-converter
+        command: [
+          "python", 
+          "convert_model.py",
+          "--model", "yolov8l.pt",
+          "--model-name", "yolov8trt_fp16",
+          "--min-shape", "1x3x640x640",
+          "--opt-shape", "4x3x640x640",
+          "--max-shape", "8x3x640x640",
+          "--device", "0",
+          "--model-repository", "/model_repository"
+        ]
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        envFrom:
+        - configMapRef:
+            name: model-converter-config
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        volumeMounts:
+        - name: model-repository
+          mountPath: /model_repository
+        securityContext:
+          privileged: true
+      volumes:
+      - name: model-repository
+        persistentVolumeClaim:
+          claimName: model-repository-pvc
+      restartPolicy: OnFailure
